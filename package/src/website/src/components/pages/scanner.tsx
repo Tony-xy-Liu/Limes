@@ -78,6 +78,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             let i = 0
             let cachedScans = r.reduce((map: Map<number, ScanInfo>, x: any) => {
                 const [_, info] = x;
+                info.id = i;
                 map.set(i, info)
                 i++;
                 return map;
