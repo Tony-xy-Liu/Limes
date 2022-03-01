@@ -31,5 +31,5 @@ PROVIDER_DEFAULT_CONNECTION_TIMEOUT = 60
 
 ELAB_CACHE = 'elab_cache.npy'
 
-MMAP_URL = 'https://bgcmmapapim.azure-api.net/mmapkoonkieapiqa/'
-# MMAP_URL = 'https://bgcmmapapim.azure-api.net/mmapkoonkieapiprod/'
+# MMAP_URL = 'https://bgcmmapapim.azure-api.net/mmapkoonkieapiqa/'
+MMAP_URL = 'https://bgcmmapapim.azure-api.net/mmapkoonkieapiprod/'

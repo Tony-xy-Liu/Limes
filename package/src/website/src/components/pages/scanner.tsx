@@ -75,9 +75,11 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
 
     public componentDidMount() {
         this.apiService.GetCache(this.CACHE_KEY).then((r: any) => {
+            let i = 0
             let cachedScans = r.reduce((map: Map<number, ScanInfo>, x: any) => {
-                const [i, info] = x;
+                const [_, info] = x;
                 map.set(i, info)
+                i++;
                 return map;
             }, new Map<number, ScanInfo>());
             console.log(cachedScans)
@@ -93,6 +95,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
 
             this.setState({
                 scans: cachedScans,
+                lastID: i,
             })
         })
     }
