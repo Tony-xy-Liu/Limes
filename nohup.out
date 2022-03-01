@@ -1,0 +1,24 @@
+[2022-02-24 05:00:49 +0000] [206842] [INFO] Starting gunicorn 20.1.0
+[2022-02-24 05:00:49 +0000] [206842] [INFO] Listening at: https://192.168.120.68:8001 (206842)
+[2022-02-24 05:00:49 +0000] [206842] [INFO] Using worker: geventwebsocket.gunicorn.workers.GeventWebSocketWorker
+[2022-02-24 05:00:49 +0000] [206870] [INFO] Booting worker with pid: 206870
+[2022-02-24 05:00:52 +0000] [206842] [INFO] Handling signal: int
+[2022-02-24 05:00:52 +0000] [206870] [INFO] Worker exiting (pid: 206870)
+## loading static providers
+loaded 2
+## loading api endpoints
+14 endpoints linked
+[2022-02-24 05:00:52 +0000] [206842] [INFO] Shutting down: Master
+[2022-02-24 05:01:01 +0000] [206981] [INFO] Starting gunicorn 20.1.0
+[2022-02-24 05:01:01 +0000] [206981] [INFO] Listening at: https://192.168.120.68:8001 (206981)
+[2022-02-24 05:01:01 +0000] [206981] [INFO] Using worker: geventwebsocket.gunicorn.workers.GeventWebSocketWorker
+[2022-02-24 05:01:01 +0000] [206982] [INFO] Booting worker with pid: 206982
+[2022-02-24 07:23:55 +0000] [206981] [INFO] Handling signal: hup
+[2022-02-24 07:23:55 +0000] [206981] [INFO] Hang up: Master
+[2022-02-24 07:23:55 +0000] [206981] [WARNING] Worker with pid 206982 was terminated due to signal 1
+[2022-02-24 07:23:55 +0000] [210278] [INFO] Booting worker with pid: 210278
+./run.sh: 11: npm: not found
+[2022-03-01 08:15:44 +0000] [265633] [INFO] Starting gunicorn 20.1.0
+[2022-03-01 08:15:44 +0000] [265633] [INFO] Listening at: https://192.168.120.68:8001 (265633)
+[2022-03-01 08:15:44 +0000] [265633] [INFO] Using worker: geventwebsocket.gunicorn.workers.GeventWebSocketWorker
+[2022-03-01 08:15:44 +0000] [265634] [INFO] Booting worker with pid: 265634

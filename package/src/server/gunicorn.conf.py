@@ -1,7 +1,7 @@
 # bind = 'localhost:8001'
-bind = '10.0.0.224:8001'
+# bind = '10.0.0.224:8001'
 # bind = '127.0.0.1:8002'
-# bind = '192.168.120.68:8001'
+bind = '192.168.120.68:8001'
 # bind = 'sh-lims.microbiology.ubc.ca:8001'
 
 workers = 1
