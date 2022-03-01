@@ -1,15 +1,15 @@
-from typing import Tuple
-from webbrowser import BackgroundBrowser
+from typing import Tuple, Union
 import numpy as np
 
 from limes_common import config
 from limes_common import models
 from limes_common.connections import T
 from limes_common.connections.http import HttpConnection
-from limes_common.models import Model, elab as Models, provider as ProviderModels, mmap as MmapModels
+from limes_common.models import Model, elab as Models, provider as ProviderModels
+from limes_common.models.mmap import SequencingFacilityQuery as MmapQuery
 
 class Storages:
-    def __init__(self, storages: list[Models.Storage] = None) -> None:
+    def __init__(self, storages: Union[list[Models.Storage], None] = None) -> None:
         if storages is None:
             try:
                 loaded = np.load(file=config.ELAB_CACHE, allow_pickle=True)
@@ -118,52 +118,69 @@ class ELabConnection(HttpConnection):
             transaction.Response()
         )
 
-    # for demo
-    def AddSample(self, barcode, mr: MmapModels.SequencingFacilityQuery.Response):
+    def MmapAdd(self, entries: dict[str, MmapQuery.Response]) -> dict:
+        """@entries is dict of barcode: mmapQ"""
 
-        type, pres, depth, col, cond = (mr.sampleType, mr.samplePreservationMethodology,
+        bres = self.LookupBarcodes(list(entries.keys()))
+        def tryAdd(bar: str, mr: MmapQuery.Response):
+            transaction = Models.MmapAddSample
+            if mr.Code != 200:
+                res = transaction.Response()
+                res.Code, res.Error = mr.Code, mr.Error
+                return res
+            # try:
+            type, pres, depth, col, cond = (mr.sampleType, mr.samplePreservationMethodology,
             mr.depth, mr.collectionDate, mr.shippingCondition)
-        transaction = Models.AddSample
-        req = transaction.Request()
-        req.storageLayerID = 784674
-        req.sampleTypeID = 33687
-        req.altID = barcode
-        req.name = f"{type} [{pres}]"
+            req = transaction.Request()
+            req.storageLayerID = 784675
+            req.sampleTypeID = 33687
+            req.altID = bar
 
-        bres = self.LookupBarcodes([barcode])
-        if bres[barcode] is not None:
-            res = transaction.Response()
-            res.Code = 400
-            res.Error = "Barcode exists"
+            btoks = bar.split('-')
+            if len(btoks) < 3:
+                if "test" in bar.lower():
+                    cc = bar
+                else:
+                    cc = bar[-3:]
+            else:
+                cc = [t[-1] for t in btoks[:3]]
+            req.name = f"{type} [{cc}]"
+
+            res = self._makeParseRequest(
+                req,
+                transaction.Response.Parse,
+                transaction.Response()
+            )
+
+            err_res = transaction.Response()
+            err_res.Code = 400
+            err_res.Error = "Barcode exists"
+            if bres[bar] is not None: return err_res
+            if 'raw' not in res.Body: return err_res
+
+            sampleID = res.Body['raw']
+            res = self.GetSample(sampleID)
+
+            # add meta fields
+            metas = [
+                {'sampleDataType': 'TEXT', 'key': 'Type', 'value': type, 'sampleTypeMetaID': 215089},
+                {'sampleDataType': 'TEXT', 'key': 'Preservation Methodology', 'value': pres, 'sampleTypeMetaID': 215090},
+                {'sampleDataType': 'TEXT', 'key': 'Depth', 'value': depth, 'sampleTypeMetaID': 215091},
+                {'sampleDataType': 'TEXT', 'key': 'Collection Date', 'value': col, 'sampleTypeMetaID': 215092},
+                {'sampleDataType': 'TEXT', 'key': 'Shipping Condition', 'value': cond, 'sampleTypeMetaID': 215093},
+            ]
+            for m in metas:
+                transaction = Models.AddSampleMeta
+                mreq = transaction.Request(sampleID, m)
+                self._makeParseRequest(mreq, transaction.Response.Parse, transaction.Response())
             return res
+            # except:
+            #     err_res = transaction.Response()
+            #     err_res.Code = 500
+            #     err_res.Error = "Failed to add to eLab"
+            #     return err_res
 
-        res = self._makeParseRequest(
-            req,
-            transaction.Response.Parse,
-            transaction.Response()
-        )
-
-        if 'raw' not in res.Body:
-            res = transaction.Response()
-            res.Code = 400
-            res.Error = "Barcode exists"
-            return res
-
-        sampleID = res.Body['raw']
-        # add meta fields
-        metas = [
-            {'sampleDataType': 'TEXT', 'key': 'Type', 'value': type, 'sampleTypeMetaID': 215089},
-            {'sampleDataType': 'TEXT', 'key': 'Preservation Methodology', 'value': pres, 'sampleTypeMetaID': 215090},
-            {'sampleDataType': 'TEXT', 'key': 'Depth', 'value': depth, 'sampleTypeMetaID': 215091},
-            {'sampleDataType': 'TEXT', 'key': 'Collection Date', 'value': col, 'sampleTypeMetaID': 215092},
-            {'sampleDataType': 'TEXT', 'key': 'Shipping Condition', 'value': cond, 'sampleTypeMetaID': 215093},
-        ]
-        for m in metas:
-            transaction = Models.AddSampleMeta
-            mreq = transaction.Request(sampleID, m)
-            self._makeParseRequest(mreq, transaction.Response.Parse, transaction.Response())
-
-        return res 
+        return dict([(bar, tryAdd(bar, mr)) for bar, mr in entries.items()])
 
     def ReloadStorages(self):
         transaction = Models.AllStorages

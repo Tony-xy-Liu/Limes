@@ -1,5 +1,4 @@
 import { RequestService, POST } from "./requests"
-import { U, P } from "../credentials/elab"
 import { DEBUG } from "../config"
 
 export abstract class ApiService {
@@ -135,32 +134,69 @@ export abstract class ApiService {
         })
     }
 
-    public LinkBarcode(AltBarcode: string, SampleBarcode: string) {
-        const b = this.makeBody({
-            AltBarcode: AltBarcode,
-            SampleBarcode: SampleBarcode,
-        })
-        return this.requester.POST({
-            path: 'setaltid',
-            body: b
-        }).then(raw => {
-            const res = raw.data;
-            console.log(res)
-            return res;
-        })
-    }
+    // public LinkBarcode(AltBarcode: string, SampleBarcode: string) {
+    //     const b = this.makeBody({
+    //         AltBarcode: AltBarcode,
+    //         SampleBarcode: SampleBarcode,
+    //     })
+    //     return this.requester.POST({
+    //         path: 'setaltid',
+    //         body: b
+    //     }).then(raw => {
+    //         const res = raw.data;
+    //         return res;
+    //     })
+    // }
 
-    public AddMmapSample(Barcode: string) {
+    public AddMmapSample(Barcodes: string[]) {
         const b = this.makeBody({
-            Barcode: Barcode,
+            Barcodes: Barcodes,
         })
         return this.requester.POST({
             path: 'mmapadd',
             body: b
         }).then(raw => {
-            const res = raw.data;
-            console.log(res)
+            const res = raw.data.responses;
+            // console.log(raw.data)
             return res;
+        })
+    }
+
+    public SetCache(key: string, data: any) {
+        const b = this.makeBody({
+            key: key,
+            data: JSON.stringify(data),
+            isSet: true
+        })
+        console.log(b.data)
+        return this.requester.POST({
+            path: 'cache',
+            body: b
+        }).then(raw => {
+            const res = raw.data;
+            console.log(raw.data)
+            return res;
+        })
+    }
+
+    public GetCache(key: string) {
+        const b = this.makeBody({
+            key: key,
+            isSet: false
+        })
+        return this.requester.POST({
+            path: 'cache',
+            body: b
+        }).then(raw => {
+            // console.log(raw.data.data)
+            let res = JSON.parse(raw.data.data)
+            try {
+                ;
+            } catch (err) {
+                res = {}
+            } finally {
+                return res;
+            }
         })
     }
 }
@@ -169,19 +205,13 @@ class Prod_ApiService extends ApiService {
 
 }
 
-class Dev_ApiService extends ApiService {
-    constructor() {
-        super()
-        this.Login(U, P)
-    }
-}
-
 export class ApiServiceFactory {
     private static I: ApiService
 
     public static GetApiService() {
         if(!this.I) {
-            this.I = DEBUG? new Dev_ApiService(): new Prod_ApiService()
+            // this.I = DEBUG? new Dev_ApiService(): new Prod_ApiService()
+            this.I = new Prod_ApiService()
         }
 
         return this.I

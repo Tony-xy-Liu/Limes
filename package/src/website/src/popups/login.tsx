@@ -4,7 +4,6 @@ import { Modal, Grid, TextField, Button, CircularProgress, Fade, Typography, Car
 import { ApiService } from '../services/api';
 
 import { DEBUG } from '../config'
-import { U, P } from '../credentials/elab'
 
 interface LoginState {
     username: string
@@ -187,21 +186,22 @@ class Prod_LoginModal extends LoginModal {
 
 }
 
-class Dev_LoginModal extends LoginModal {
-    constructor(props: LoginProps) {
-        super(props)
+// class Dev_LoginModal extends LoginModal {
+//     constructor(props: LoginProps) {
+//         super(props)
 
-        this.state = {
-            username: U,
-            password: P,
-            open: false,
-            error: false,
-            label: this.defaultLabel,
-            loading: false,
-            tried: false,
-        }
+//         this.state = {
+//             username: U,
+//             password: P,
+//             open: false,
+//             error: false,
+//             label: this.defaultLabel,
+//             loading: false,
+//             tried: false,
+//         }
         
-    }
-}
+//     }
+// }
 
-export const ConcreteLoginModal = DEBUG ? Dev_LoginModal : Prod_LoginModal
+// export const ConcreteLoginModal = DEBUG ? Dev_LoginModal : Prod_LoginModal
+export const ConcreteLoginModal = Prod_LoginModal

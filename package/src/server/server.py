@@ -6,11 +6,14 @@ from flask import Flask, request
 from flask_socketio import SocketIO
 
 import uuid
+from concurrent.futures import ThreadPoolExecutor
+from threading import Condition
+from datetime import datetime
 
 from limes_common import config
 from limes_common.models import Model, server, elab
 from limes_common.utils import format_from_utc, current_time
-from server.authenticator import Authenticator
+from server.authenticator import ClientManger
 from .providers import Handler as ProviderHandler
 from .clientManager import Client, ClientManager
 
@@ -39,7 +42,7 @@ def _toRes(model: Model):
 
 
 _providers = ProviderHandler(_views, ClientManager.GetInstance())
-_authenticator = Authenticator(_providers.GetElabCon())
+_clients = ClientManger(_providers.GetElabCon())
 
 # todo: csrf + maybe encryption 
 def Init():
@@ -49,21 +52,22 @@ def Init():
 def Authenticate():
     MODEL = server.Authenticate
     req = MODEL.Request.Parse(request.data)
-    res = _authenticator.Authenticate(req.ClientID)
+    res = _clients.Authenticate(req.ClientID)
     if res.Success:
         print('auth: %s' % (res.FirstName))
     return _toRes(res)
 
 def Login():
-    res = _authenticator.Login(request.data)
+    res = _clients.Login(request.data)
     if res.Success:
-        print('login: %s'  % res.FirstName)
+        now = datetime.now().strftime("%d %b, %Y %H:%M:%S")
+        print(f'{now} - {res.LastName}, {res.FirstName} | login')
     return _toRes(res)
 
 def Barcodes():
     SB = server.BarcodeLookup
     req = SB.Request.Parse(request.data)
-    auth = _authenticator.Authenticate(req.ClientID)
+    auth = _clients.Authenticate(req.ClientID)
 
     res = SB.Response()
 
@@ -82,7 +86,7 @@ def Barcodes():
 def SetAltID():
     MODEL = server.LinkBarcode
     req = MODEL.Request.Parse(request.data)
-    auth = _authenticator.Authenticate(req.ClientID)
+    auth = _clients.Authenticate(req.ClientID)
 
     res = MODEL.Response()
     if auth.Success:
@@ -104,30 +108,46 @@ def SetAltID():
 def MmapAdd():
     MODEL = server.MmapAdd
     req = MODEL.Request.Parse(request.data)
-    auth = _authenticator.Authenticate(req.ClientID)
+    auth = _clients.Authenticate(req.ClientID)
 
     res = MODEL.Response()
     if auth.Success:
-        print('mmap add:', req.Barcode)
+        now = datetime.now().strftime("%d %b, %Y %H:%M:%S")
+        print(f'{now} - {auth.LastName}, {auth.FirstName} | mmap add: [{", ".join(req.Barcodes)}]')
         mmap = _providers.GetMmapCon()
-        mr = mmap.SequencingFacilityQuery(req.Barcode, "Pending")
-
-        if mr.Code == 200:
-            elab = _providers.GetElabCon()
-            elab.SetAuth(auth.Token)
-            res = elab.AddSample(req.Barcode, mr)
-            elab.Logout()
-        else:
-            res.Code = mr.Code
+        mrs = dict([(bar, mmap.SequencingFacilityQuery(bar, "Received")) for bar in req.Barcodes])
+        
+        elab = _providers.GetElabCon()
+        elab.SetAuth(auth.Token)
+        res.responses = elab.MmapAdd(mrs)
+        elab.SetAuth(auth.Token)
     else:
         res.Code = 401
         res.Error = 'Authentication failed'
+
+    return _toRes(res)
+
+def Cache():
+    MODEL = server.Cache
+    req = MODEL.Request.Parse(request.data)
+
+    res = MODEL.Response()
+    if req.isSet:
+        res.Code = _clients.SetCache(req.ClientID, req.key, req.data)
+    else:
+        data = _clients.GetCache(req.ClientID, req.key, None)
+        if data is not None:
+            res.Code = 200
+            res.data = data
+        else:
+            res.Code = 404
+
     return _toRes(res)
 
 def AllStorages():
     MODEL = server.AllStorages
     req = MODEL.Request.Parse(request.data)
-    auth = _authenticator.Authenticate(req.ClientID)
+    auth = _clients.Authenticate(req.ClientID)
     res = MODEL.Response()
 
     if auth.Success:
@@ -144,7 +164,7 @@ def AllStorages():
 def SamplesByStorage():
     MODEL = server.SamplesByStorage
     req = MODEL.Request.Parse(request.data)
-    auth = _authenticator.Authenticate(req.ClientID)
+    auth = _clients.Authenticate(req.ClientID)
 
     res = MODEL.Response()
 
@@ -172,7 +192,7 @@ def PrintOps():
     OPS = server.PrintOp
     res = SP.Response()
 
-    cl = _authenticator.Authenticate(req.ClientID)
+    cl = _clients.Authenticate(req.ClientID)
     if not cl.Success:
         res.Code = 401
         return _toRes(res)

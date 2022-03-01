@@ -13,6 +13,8 @@ import { ApiService, ApiServiceFactory } from './services/api';
 import { DEBUG } from './config'
 import { ScannerComponent } from './components/pages/scanner';
 
+import Chip from '@mui/material/Chip';
+
 const theme = createTheme({
   palette: {
     primary: {

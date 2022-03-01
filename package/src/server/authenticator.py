@@ -7,7 +7,7 @@ from limes_common.models import server as Models
 
 from server.clientManager import Client, ClientManager, ClientType
 
-class Authenticator:
+class ClientManger:
     def __init__(self, elab: ELabConnection) -> None:
         self._clients = ClientManager.GetInstance()
         self._elab = elab
@@ -70,3 +70,19 @@ class Authenticator:
         else:
             res.Success = False
         return res
+
+    def SetCache(self, ClientID: str, key:str, data: str):
+        client = self._clients.Get(ClientID)
+        if client is not None:
+            client.Cache[key] = data
+            return 200
+        else:
+            return 404
+
+    def GetCache(self, ClientID: str, key:str, default=None) -> Union[str, None]:
+        client = self._clients.Get(ClientID)
+        if client is not None:
+            return client.Cache.get(key, default)
+        else:
+            return default
+

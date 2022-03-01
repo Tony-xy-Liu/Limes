@@ -3,6 +3,7 @@ from __future__ import annotations
 from limes_common.models import Model, Primitive, elab, provider as Models
 from limes_common.models import provider
 from limes_common.models.provider import Transaction
+from limes_common.models.elab import MmapAddSample
 from limes_common.models.http import GET, POST
 
 class Endpoints(provider.Endpoints):
@@ -21,6 +22,7 @@ class Endpoints(provider.Endpoints):
     ALL_STORAGES='allstorages'
     SAMPLES_BY_STORAGE='samplesbystorage'
     MMAP_ADD = 'mmapadd'
+    CACHE = 'cache'
 
 class ServerRequest(Models.ProviderRequest):
     ClientID: str
@@ -140,15 +142,24 @@ class LinkBarcode(Transaction):
 
 class MmapAdd(Transaction):
     class Request(ServerRequest):
-        Barcode: str
+        Barcodes: list[str]
         def __init__(self) -> None:
             super().__init__(Endpoints.MMAP_ADD, POST)
 
     class Response(ServerResponse):
-        collectionDate: str
-        samplePreservationMethodology: str
-        sampleType: str
-        depth: float
+        responses: dict[str, MmapAddSample.Response]
+
+
+class Cache(Transaction):
+    class Request(ServerRequest):
+        isSet: bool
+        key: str
+        data: str
+        def __init__(self) -> None:
+            super().__init__(Endpoints.CACHE, POST)
+
+    class Response(ServerResponse):
+        data: str
 
 class AllStorages(Transaction):
     class Request(ServerRequest):

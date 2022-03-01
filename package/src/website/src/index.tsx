@@ -5,9 +5,7 @@ import './index.css';
 import '@fontsource/roboto';
 
 ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
+  <App />,
   document.getElementById('root')
 );
 

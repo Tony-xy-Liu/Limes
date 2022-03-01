@@ -48,49 +48,45 @@ def _loadStatics(reload=False):
             ref.LastUse = utils.current_time()
             ref.Lock.release
 
-    try:
-        with open(config.PROVIDER_STATICS_PATH, 'r') as raw:
-            statics: list[dict] = json.loads("".join(raw.readlines()))
-            loaded: ProviderDictionary = {}
-            tasks: list[Thread] = []
-            for p in statics:
-                # todo add these strings to some config
-                name = p.get('name', '')
-                type = p.get('type', None)
-                url = p.get('url', '')
-                if type == 'ssh':
-                    setup = p.get('setup', [])
-                    command = p.get('command', '')
-                    timeout = p.get('timeout', config.PROVIDER_DEFAULT_TRANSACTION_TIMEOUT)
-                    keepAlive = p.get('keepAlive', config.PROVIDER_DEFAULT_CONNECTION_TIMEOUT)
-                    idFile = p.get('identity', None)
-                    con = SshConnection(url, setup, command, timeout, keepAlive, identityFile=idFile)
-                    # con.AddOnResponseCallback(lambda s: print('>%s'%s))
-                    loaded[name] = ProviderReference(
-                        con,
-                        con.GetSchema()
-                    )
-                    # print('s')
-                    # tasks.append(Thread(target=GetSchema, args=[loaded[name]]))
-                else:
-                    print('unsupported provider type: [%s]' % (type))
-            for t in tasks:
-                t.daemon = True
-                t.start()
+    with open(config.PROVIDER_STATICS_PATH, 'r') as raw:
+        statics: list[dict] = json.loads("".join(raw.readlines()))
+        loaded: ProviderDictionary = {}
+        tasks: list[Thread] = []
+        for p in statics:
+            # todo add these strings to some config
+            name = p.get('name', '')
+            type = p.get('type', None)
+            url = p.get('url', '')
+            if type == 'ssh':
+                setup = p.get('setup', [])
+                command = p.get('command', '')
+                timeout = p.get('timeout', config.PROVIDER_DEFAULT_TRANSACTION_TIMEOUT)
+                keepAlive = p.get('keepAlive', config.PROVIDER_DEFAULT_CONNECTION_TIMEOUT)
+                idFile = p.get('identity', None)
+                con = SshConnection(url, setup, command, timeout, keepAlive, identityFile=idFile)
+                # con.AddOnResponseCallback(lambda s: print('>%s'%s))
+                loaded[name] = ProviderReference(
+                    con,
+                    con.GetSchema()
+                )
+                # print('s')
+                # tasks.append(Thread(target=GetSchema, args=[loaded[name]]))
+            else:
+                print('unsupported provider type: [%s]' % (type))
+        for t in tasks:
+            t.daemon = True
+            t.start()
 
-        # if len(loaded) > 0:
-        # todo: clean this
-        elabcon = ELabConnection()
-        loaded['elab'] = ProviderReference(elabcon, elabcon.GetSchema())
-        with open('server/secrets/mmap-Ocp-Apim-Subscription-Key','r') as mk:
-            oask = mk.readlines()[0]
-        mmapcon = MmapConnection(oask)
-        loaded['mmap'] = ProviderReference(mmapcon, mmapcon.GetSchema())
-        print('loaded %s' % len(loaded))
-        finish(loaded)
-    except FileNotFoundError:
-        print('!!! file [%s] required !!!' % config.PROVIDER_STATICS_PATH)
-        finish(None)
+    # if len(loaded) > 0:
+    # todo: clean this
+    elabcon = ELabConnection()
+    loaded['elab'] = ProviderReference(elabcon, elabcon.GetSchema())
+    with open('server/secrets/mmap-Ocp-Apim-Subscription-Key','r') as mk:
+        oask = mk.readlines()[0]
+    mmapcon = MmapConnection(oask)
+    loaded['mmap'] = ProviderReference(mmapcon, mmapcon.GetSchema())
+    print('loaded %s' % len(loaded))
+    finish(loaded)
 import signal
 
 class Handler:

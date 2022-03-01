@@ -14,6 +14,7 @@ class Client:
         self.LastName: str = LastName
         self.ClientID: str = '%012x' % (uuid.uuid1().int)
         self.Type: ClientType = Type
+        self.Cache: dict = {}
 
 class ClientManager:
     I: ClientManager|None = None
@@ -29,10 +30,11 @@ class ClientManager:
         self._clientsByToken: dict[str, str] = {} # token: clientId
 
     def RegisterClient(self, client: Client) -> bool:
-        # remove old if exists
+        # use old if same
         old = self._clientsByToken.get(client.Token)
-        if old is not None: 
-            self._activeClients.pop(old)
+        if old is not None:
+            old_c = self._activeClients.pop(old)
+            client.Cache = old_c.Cache
             self._clientsByToken.pop(client.Token)
 
         if client.FirstName is None or client.LastName is None:

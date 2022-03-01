@@ -31,6 +31,7 @@ interface ScannerState {
     selectedScanIDs: GridSelectionModel
     lastID: number
     cardBorderColour: any
+    lastScanTime: number
     w: number
     h: number
     // mode: Modes
@@ -38,11 +39,17 @@ interface ScannerState {
     actionDisabled: boolean
     redirecting: boolean
     working: boolean
+    info: string
+    infoColour: "inherit" | "primary" | "secondary"
+    lastInfo: number
 }
 
 export class ScannerComponent extends React.Component<ScannerProps, ScannerState> {
     private apiService: ApiService
     private readonly NO_SCAN: string = "Nothing Scanned"
+    private readonly SCAN_DELAY: number = 250
+    private readonly DEFAULT_INFO: string = 'Double click on added rows to open in eLab'
+    private readonly CACHE_KEY: string = "scans"
 
     constructor(props: ScannerProps) {
         super(props)
@@ -52,8 +59,12 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             selectedScanIDs: [],
             lastID: -1,
             cardBorderColour: 'transparent',
+            lastScanTime: 0,
             w: 300,
             h: 300,
+            info: this.DEFAULT_INFO,
+            infoColour: 'inherit',
+            lastInfo: 0,
             // mode: Modes.ELAB,
             // actionButtonName: 'Open',
             actionDisabled: true,
@@ -63,14 +74,27 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
     }
 
     public componentDidMount() {
-        const [w, h] = [window.innerWidth, window.innerHeight]
-        const l = w < h ? w : h
-        if (l < this.state.w) {
+        this.apiService.GetCache(this.CACHE_KEY).then((r: any) => {
+            let cachedScans = r.reduce((map: Map<number, ScanInfo>, x: any) => {
+                const [i, info] = x;
+                map.set(i, info)
+                return map;
+            }, new Map<number, ScanInfo>());
+            console.log(cachedScans)
+
+            const [w, h] = [window.innerWidth, window.innerHeight]
+            const l = w < h ? w : h
+            let [nw, nh] = [w, h]
+            if (l < this.state.w) {
+                nw = w/10
+                nh = h/100
+                // ???
+            }
+
             this.setState({
-                w: w - 20,
-                h: w - 20,
+                scans: cachedScans,
             })
-        }
+        })
     }
 
     private onScan(code: string) {
@@ -78,23 +102,29 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
         return new Promise<void>((resolve, reject) => {
             this.setState({
                 cardBorderColour: this.props.theme.palette.primary.main,
+                lastScanTime: Date.now(),
                 working: true,
             }, () => resolve());
 
+            const DELAY = this.SCAN_DELAY+50
             const setcol = (col: any, t: number) => {
                 return new Promise<void>((r, j) => {
                     setTimeout(() => {
-                        this.setState({
-                            cardBorderColour: col
-                        });
+                        const lastT = this.state.lastScanTime
+                        if (Date.now() - lastT >= DELAY) {
+                            this.setState({
+                                cardBorderColour: col
+                            });
+                        }
                         r();
                     }, t);
                 })
             }
 
-            setcol('transparent', 100)
-                .then(() => setcol(this.props.theme.palette.primary.main, 60))
-                .then(() => setcol('transparent', 500))
+            
+            setcol('transparent', DELAY+50)
+                // .then(() => setcol(this.props.theme.palette.primary.main, 60))
+                // .then(() => setcol('transparent', 500))
 
         }).then(() => {
             const ID = this.state.lastID+1
@@ -160,10 +190,13 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                 working: false,
                 lastID: Math.max(newinfo.id, this.state.lastID),
             })
+        }).then(() => {
+            this.cacheScans()
         })
     }
 
     private updateInfo() {
+        return Promise.resolve();
         // currently not used
         // for future feedback of actions
     }
@@ -187,32 +220,56 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
         const info = scans.get(Number(row.id))
         if (info?.type === ScanType.EXISTING) {
             window.open(info.raw.link, "_blank")
+        } else {
+            const DELAY = 3000
+            this.setState({
+                info: `${info?.barcode} not in eLab!`,
+                infoColour: 'secondary',
+                lastInfo: Date.now(),
+            })
+            setTimeout(() => {
+                const lastT = this.state.lastInfo
+                if (Date.now() - lastT >= DELAY) {
+                    this.setState({
+                        info: this.DEFAULT_INFO,
+                        infoColour: 'inherit'
+                    })
+                }
+            }, DELAY);
         }
     }
 
     private onAct() {
-        for(let selected of this.state.selectedScanIDs) {
-            const info = this.state.scans.get(Number(selected))
-            console.log(`impliment add - ${info?.barcode} ${info?.info}`)
-        }   
-        // this.setState({working: true})
-        // this.apiService.AddMmapSample(this.state.lastCode).then((r) => {
-        //     const info = this.state.scanInfo
-        //     if (info.length > 1) info.pop()
-        //     if (r.Code == 200) {
-        //         info.push('Add success')
-        //     } else {
-        //         if(r.Error === "Barcode exists"){
-        //             info.push('Sample already added')
-        //         } else if (r.Code == 404) {
-        //             info.push('Unknown barcode')
-        //         } else {
-        //             info.push('Error')
-        //         }
-        //     }
+        const barcodes: string[] = this.state.selectedScanIDs
+            .map((selected) => this.state.scans.get(Number(selected)))
+            .filter((info) => !!info?.barcode && info?.type == ScanType.UNK)
+            .map((info) => !!info ? info.barcode : "") // nulls should have been filtered out...
+        this.setState({working: true})
+        this.apiService.AddMmapSample(barcodes).then((r) => {
+            const prevInfos = this.state.scans
+            const newInfos = new Map<number, ScanInfo>()
+            prevInfos.forEach((info: ScanInfo, i: number) => {
+                if (info.barcode in r) {
+                    const returnedData = r[info.barcode]
+                    if (returnedData.Code == 200) {
+                        info.type = ScanType.EXISTING
+                        info.info = returnedData.name
+                        info.raw = returnedData
+                    } else {
+                        info.info = returnedData.Code === 404? "MMAP didn't recognize barcode" : returnedData.Error
+                        info.raw = returnedData
+                    }
+                    newInfos.set(i, info)
+                } else {
+                    newInfos.set(i, info)
+                }
+            })
 
-        //     this.setState({working: false, scanInfo:info})
-        // })
+            this.setState({
+                scans: newInfos,
+                working: false
+            })
+        })
     }
 
     private onDeleteSelected() {
@@ -223,13 +280,19 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
         }
         this.setState({
             scans: scans
-        }, () => this.updateInfo())
+        }, () => this.updateInfo().then(() => {
+            this.cacheScans()
+        }))
     }
 
     private onToClipboard() {
         navigator.clipboard.writeText([...this.state.scans.values()].reduce((p, c: ScanInfo) => {
             return `${p}\n${c.barcode}\t${c.info}`
         }, ''))
+    }
+
+    private cacheScans() {
+        return this.apiService.SetCache(this.CACHE_KEY, Array.from(this.state.scans))
     }
 
     render(): JSX.Element {
@@ -267,6 +330,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                                 // margin: '-3em 0 -3em 0',
                             }}>
                                 <BarcodeScannerComponent
+                                    delay={this.SCAN_DELAY}
                                     width={this.state.w}
                                     height={this.state.h}
                                     facingMode="environment"
@@ -282,11 +346,11 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                         </Grid>
                         <Grid item>
                             <Typography
+                                color={this.state.infoColour}
                                 style={{
-                                    color: 'primary',
                                     marginBottom: '0.4em'
                                 }}>
-                                *Double click on added rows to open in eLab
+                                {this.state.info}
                             </Typography>
                         </Grid>
                         <Grid item>
@@ -297,7 +361,11 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                                 <DataGrid
                                     rows={[...this.state.scans.values()].map((o: ScanInfo) => {
                                         let row: any = o
-                                        row.inElab = o.type != ScanType.UNK? '✓' : ''
+                                        if (o.type == ScanType.UNK) {
+                                            row.inElab = !!o.raw?.Code ? '❌' : ''
+                                        } else {
+                                            row.inElab = o.type == ScanType.EXISTING ? '✔' : ''
+                                        }
                                         return row
                                     }).reverse()}
                                     columns={[

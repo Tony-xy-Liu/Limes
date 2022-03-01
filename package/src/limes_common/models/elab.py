@@ -118,7 +118,7 @@ class UpdateSample(Transaction):
         def __init__(self) -> None:
             super().__init__(Endpoints.SAMPLES, PATCH)
 
-class AddSample(Transaction):
+class MmapAddSample(Transaction):
     class Request(ELabRequest):
         sampleTypeID: int
         name: str
@@ -126,6 +126,8 @@ class AddSample(Transaction):
         storageLayerID: int
         def __init__(self) -> None:
             super().__init__(Endpoints.SAMPLES, POST)
+    class response(GetSampleById.Response):
+        pass
 
 class AddSampleMeta(Transaction):
     class Request(ELabRequest):
