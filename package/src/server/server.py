@@ -11,7 +11,7 @@ from threading import Condition
 
 from limes_common import config
 from limes_common.models import Model, server, elab
-from limes_common.utils import format_from_utc, current_time, get_time
+from limes_common.utils import format_from_utc, current_time
 from server.authenticator import ClientManger
 from .providers import Handler as ProviderHandler
 from .clientManager import Client, ClientManager
@@ -58,7 +58,7 @@ def Authenticate():
 def Login():
     res = _clients.Login(request.data)
     if res.Success:
-        now = get_time()
+        now = format_from_utc(current_time())
         _log(f'{now} - {res.LastName}, {res.FirstName} | login')
     return _toRes(res)
 
@@ -110,7 +110,7 @@ def MmapAdd():
 
     res = MODEL.Response()
     if auth.Success:
-        now = get_time()
+        now = format_from_utc(current_time())
         _log(f'{now} - {auth.LastName}, {auth.FirstName} | mmap receive: [{", ".join(req.Barcodes)}]')
         mmap = _providers.GetMmapCon()
         mrs = dict([(bar, mmap.SequencingFacilityQuery(bar, "Received")) for bar in req.Barcodes])
