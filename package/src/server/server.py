@@ -117,11 +117,13 @@ def MmapAdd():
         mmap = _providers.GetMmapCon()
         mrs = dict([(bar, mmap.SequencingFacilityQuery(bar, "Received")) for bar in req.Barcodes])
         
-        elab = _providers.GetElabCon()
-        elab.SetAuth(auth.Token)
-        res.responses = elab.MmapAdd(mrs)
-        elab.SetAuth(auth.Token)
+        # elab = _providers.GetElabCon()
+        # elab.SetAuth(auth.Token)
+        # res.responses = elab.MmapAdd(mrs)
+        # elab.SetAuth(auth.Token)
+        res.responses = mrs
     else:
+        print('x')
         res.Code = 401
         res.Error = 'Authentication failed'
 
