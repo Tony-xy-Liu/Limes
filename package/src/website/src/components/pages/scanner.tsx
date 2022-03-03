@@ -315,7 +315,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
 
     private onToClipboard() {
         const rows: any[] = [...this.state.scans.values()].filter((scanInfo) => {
-            return scanInfo.id in this.state.selectedScanIDs
+            return this.state.selectedScanIDs.includes(scanInfo.id)
         })
         if (rows.length === 0) return
         let headers = [
@@ -343,12 +343,13 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
         }
 
         headers = headers.concat(Array.from(headersSet))
-        navigator.clipboard.writeText(rows.reduce((p, row: any) => {
+        const table = rows.reduce((p, row: any) => {
             let line = headers.map((val: string, i) => {
                 return row.raw[val]
             })
             return `${p}\n${line.join('\t')}`
-        }, headers.map((h) => h.toUpperCase()).join("\t")))
+        }, headers.map((h) => h.toUpperCase()).join("\t"))
+        navigator.clipboard.writeText(table)
     }
 
     private cacheScans() {
