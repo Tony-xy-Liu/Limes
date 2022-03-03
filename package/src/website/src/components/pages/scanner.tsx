@@ -36,7 +36,6 @@ interface ScannerState {
     // mode: Modes
     // actionButtonName: string
     actionDisabled: boolean
-    redirecting: boolean
     working: boolean
     info: string
     infoColour: "inherit" | "primary" | "secondary"
@@ -75,7 +74,6 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             // mode: Modes.ELAB,
             // actionButtonName: 'Open',
             actionDisabled: true,
-            redirecting: false,
             working: false,
             useCamera: false,
         }
@@ -162,7 +160,6 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
 
             const searchELab = (): Promise<ScanInfo|undefined> => {
                 return this.apiService.BarcodeLookup([code]).then((results) => {
-                    console.log(results)
                     const remote = Object.keys(results).filter((c) => c === code)
                     const result = remote.length > 0 ? results[remote[0]] : null
                     if (result) {
@@ -323,29 +320,33 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
         ]
         const headersKnownSet = headers.reduce((p, h) => p.add(h), new Set<string>())
         const headersSet = new Set<string>()
+        const newRows: any[] = []
         for (let i=0; i<rows.length; i++) {
             let row: any = rows[i];
             let originalBarcode = row.barcode
             row = row.raw
             let filterFn;
+            let newRow: any = {}
             if (!!row.barcode) {
                 filterFn = (k: any) => ['barcode', 'name', 'sampleType', 'link'].includes(k)
-                row.sampleType = row.sampleType.name
-                row.barcode = row.altID? row.altID : row.barcode
+                newRow.sampleType = row.sampleType.name
+                newRow.barcode = row.altID? row.altID : row.barcode
             } else {
-                row.barcode = originalBarcode
+                newRow.barcode = originalBarcode
                 filterFn = (k: any) => !(['Code', 'Type'].includes(k))
             }
             
             for (let k of Object.keys(row).filter(filterFn)) {
                 if (!headersKnownSet.has(k)) headersSet.add(k)
+                newRow[k] = row[k]
             }
+            newRows[i] = row
         }
 
         headers = headers.concat(Array.from(headersSet))
-        const table = rows.reduce((p, row: any) => {
+        const table = newRows.reduce((p, row: any) => {
             let line = headers.map((val: string, i) => {
-                return row.raw[val]
+                return row[val]
             })
             return `${p}\n${line.join('\t')}`
         }, headers.map((h) => h.toUpperCase()).join("\t"))
@@ -532,9 +533,6 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                                             maxHeight: '48em'
                                     }}
                                 />
-                                <Fade in={this.state.working} style={{position: 'absolute'}}>
-                                    <CircularProgress size={33}/>
-                                </Fade>
                             </Container>
                         </Grid>
                         <Grid item>
@@ -550,13 +548,13 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                                 variant="contained"
                                 color="primary"
                                 style={buttonStyle}
-                                disabled={this.state.actionDisabled || this.state.redirecting}
+                                disabled={this.state.actionDisabled}
                                 onClick={()=> this.onAct()}
                             >
                                 {/* {this.state.actionButtonName} */}
                                 Confirm Recieve
-                                <Fade in={this.state.redirecting} style={{position: 'absolute'}}>
-                                    <CircularProgress size={33}/>
+                                <Fade in={this.state.working} style={{position: 'absolute'}}>
+                                    <CircularProgress size={30}/>
                                 </Fade>
                             </Button>
                             <Button

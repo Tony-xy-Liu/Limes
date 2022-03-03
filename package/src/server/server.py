@@ -90,7 +90,7 @@ def SetAltID():
 
     res = MODEL.Response()
     if auth.Success:
-        print('altid')
+        print(f'altid [{req.AltBarcode}]')
         mmap = _providers.GetMmapCon()
         mmapRes = mmap.SequencingFacilityQuery(req.AltBarcode, "Pending")
         res.mcode = mmapRes.Code
@@ -113,7 +113,7 @@ def MmapAdd():
     res = MODEL.Response()
     if auth.Success:
         now = datetime.now().strftime("%d %b, %Y %H:%M:%S")
-        print(f'{now} - {auth.LastName}, {auth.FirstName} | mmap add: [{", ".join(req.Barcodes)}]')
+        print(f'{now} - {auth.LastName}, {auth.FirstName} | mmap receive: [{", ".join(req.Barcodes)}]')
         mmap = _providers.GetMmapCon()
         mrs = dict([(bar, mmap.SequencingFacilityQuery(bar, "Received")) for bar in req.Barcodes])
         
