@@ -318,6 +318,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
         let headers = [
             "barcode", "name", "sampleType", "collectionDate", "shippingCondition", "samplePreservationMethodology", "depth", "link"
         ]
+        let notSeen = headers.reduce((s, h) => s.add(h), new Set<string>())
         const headersKnownSet = headers.reduce((p, h) => p.add(h), new Set<string>())
         const headersSet = new Set<string>()
         const newRows: any[] = []
@@ -333,18 +334,21 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                 newRow.barcode = row.altID? row.altID : row.barcode
             } else {
                 newRow.barcode = originalBarcode
-                filterFn = (k: any) => !(['Code', 'Type'].includes(k))
+                filterFn = (k: any) => !(['Code', 'Type', 'ElapsedTime', 'Error'].includes(k))
             }
             
             for (let k of Object.keys(row).filter(filterFn)) {
                 if (!headersKnownSet.has(k)) headersSet.add(k)
-                newRow[k] = row[k]
+                newRow[k] = newRow[k]? newRow[k] : row[k] 
             }
-            newRows[i] = row
+            for (let k of Object.keys(newRow)) {
+                if (notSeen.has(k)) notSeen.delete(k)
+            }
+            newRows[i] = newRow
         }
 
-        headers = headers.concat(Array.from(headersSet))
-        const table = newRows.reduce((p, row: any) => {
+        headers = headers.filter((h) => !notSeen.has(h)).concat(Array.from(headersSet))
+        const table = newRows.reverse().reduce((p, row: any) => {
             let line = headers.map((val: string, i) => {
                 return row[val]
             })
