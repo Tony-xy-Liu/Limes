@@ -1,11 +1,7 @@
 import React from "react";
 import BarcodeScannerComponent from "react-qr-barcode-scanner";
-import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormControl from '@mui/material/FormControl';
 // import FormLabel from '@mui/material/FormLabel';
-import { Typography, Grid, Card, Button, CircularProgress, Fade, Container } from '@material-ui/core';
+import { Typography, Grid, Card, Button, CircularProgress, Fade, Container, TextField } from '@material-ui/core';
 import { ScannerProps } from '../../models/props';
 import { ApiService } from "../../services/api";
 import { DataGrid, GridColDef, GridRowParams, GridSelectionModel } from '@material-ui/data-grid';
@@ -32,6 +28,9 @@ interface ScannerState {
     lastID: number
     cardBorderColour: any
     lastScanTime: number
+    lastBarInputTime: number,
+    lastDelayTime: number,
+    inputDelayInterval: number,
     w: number
     h: number
     // mode: Modes
@@ -42,6 +41,7 @@ interface ScannerState {
     info: string
     infoColour: "inherit" | "primary" | "secondary"
     lastInfo: number
+    useCamera: boolean
 }
 
 export class ScannerComponent extends React.Component<ScannerProps, ScannerState> {
@@ -49,7 +49,11 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
     private readonly NO_SCAN: string = "Nothing Scanned"
     private readonly SCAN_DELAY: number = 250
     private readonly DEFAULT_INFO: string = 'Double click on added rows to open in eLab'
-    private readonly CACHE_KEY: string = "scans"
+    private readonly CACHE_KEY_SCAN: string = "scanner/scans"
+    private readonly CACHE_KEY_INPUT_DELAY: string = "scanner/input_delay"
+    private readonly DEFAULT_INPUT_DELAY = 450
+    private readonly MIN_DELAY = 1
+    private readonly MAX_DELAY = 10000
 
     constructor(props: ScannerProps) {
         super(props)
@@ -60,6 +64,9 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             lastID: -1,
             cardBorderColour: 'transparent',
             lastScanTime: 0,
+            lastBarInputTime: 0,
+            lastDelayTime: 0,
+            inputDelayInterval: this.DEFAULT_INPUT_DELAY,
             w: 300,
             h: 300,
             info: this.DEFAULT_INFO,
@@ -70,20 +77,24 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             actionDisabled: true,
             redirecting: false,
             working: false,
+            useCamera: false,
         }
     }
 
     public componentDidMount() {
-        this.apiService.GetCache(this.CACHE_KEY).then((r: any) => {
+        Promise.all([
+            this.apiService.GetCache(this.CACHE_KEY_SCAN),
+            this.apiService.GetCache(this.CACHE_KEY_INPUT_DELAY)
+        ]).then(([scan_cache, input_delay]: any[]) => {
             let i = 0
-            let cachedScans = r.reduce((map: Map<number, ScanInfo>, x: any) => {
+            scan_cache = scan_cache? scan_cache : []
+            let cachedScans = scan_cache.reduce((map: Map<number, ScanInfo>, x: any) => {
                 const [_, info] = x;
                 info.id = i;
                 map.set(i, info)
                 i++;
                 return map;
             }, new Map<number, ScanInfo>());
-            console.log(cachedScans)
 
             const [w, h] = [window.innerWidth, window.innerHeight]
             const l = w < h ? w : h
@@ -97,11 +108,15 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             this.setState({
                 scans: cachedScans,
                 lastID: i,
+                inputDelayInterval: input_delay? input_delay : this.DEFAULT_INPUT_DELAY,
             })
+
         })
     }
 
     private onScan(code: string) {
+        if (code.trim() === "") return
+
         const newscans = this.state.scans
         return new Promise<void>((resolve, reject) => {
             this.setState({
@@ -147,6 +162,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
 
             const searchELab = (): Promise<ScanInfo|undefined> => {
                 return this.apiService.BarcodeLookup([code]).then((results) => {
+                    console.log(results)
                     const remote = Object.keys(results).filter((c) => c === code)
                     const result = remote.length > 0 ? results[remote[0]] : null
                     if (result) {
@@ -195,7 +211,9 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                 lastID: Math.max(newinfo.id, this.state.lastID),
             })
         }).then(() => {
-            this.cacheScans()
+            return this.cacheScans()
+        }).then(() => {
+            return this.updateInfo()
         })
     }
 
@@ -222,7 +240,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
     private tryNavigateRow(row: GridRowParams) {
         const scans = this.state.scans
         const info = scans.get(Number(row.id))
-        if (info?.type === ScanType.EXISTING) {
+        if (info?.type === ScanType.EXISTING && !!info?.raw?.link) {
             window.open(info.raw.link, "_blank")
         } else {
             const DELAY = 3000
@@ -257,7 +275,11 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                     const returnedData = r[info.barcode]
                     if (returnedData.Code == 200) {
                         info.type = ScanType.EXISTING
-                        info.info = returnedData.name
+                        info.info = Object.entries(returnedData).filter(([k, val]) => {
+                            return !(k === 'Code' || k === 'Type')
+                        }).map(([k, val]) => {
+                            return val
+                        }).join(", ")
                         info.raw = returnedData
                     } else {
                         info.info = returnedData.Code === 404? "MMAP didn't recognize barcode" : returnedData.Error
@@ -273,6 +295,8 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                 scans: newInfos,
                 working: false
             })
+
+            return this.cacheScans()
         })
     }
 
@@ -290,13 +314,80 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
     }
 
     private onToClipboard() {
-        navigator.clipboard.writeText([...this.state.scans.values()].reduce((p, c: ScanInfo) => {
-            return `${p}\n${c.barcode}\t${c.info}`
-        }, ''))
+        const rows: any[] = [...this.state.scans.values()].filter((scanInfo) => {
+            return scanInfo.id in this.state.selectedScanIDs
+        })
+        if (rows.length === 0) return
+        let headers = [
+            "barcode", "name", "sampleType", "collectionDate", "shippingCondition", "samplePreservationMethodology", "depth", "link"
+        ]
+        const headersKnownSet = headers.reduce((p, h) => p.add(h), new Set<string>())
+        const headersSet = new Set<string>()
+        for (let i=0; i<rows.length; i++) {
+            let row: any = rows[i];
+            let originalBarcode = row.barcode
+            row = row.raw
+            let filterFn;
+            if (!!row.barcode) {
+                filterFn = (k: any) => ['barcode', 'name', 'sampleType', 'link'].includes(k)
+                row.sampleType = row.sampleType.name
+                row.barcode = row.altID? row.altID : row.barcode
+            } else {
+                row.barcode = originalBarcode
+                filterFn = (k: any) => !(['Code', 'Type'].includes(k))
+            }
+            
+            for (let k of Object.keys(row).filter(filterFn)) {
+                if (!headersKnownSet.has(k)) headersSet.add(k)
+            }
+        }
+
+        headers = headers.concat(Array.from(headersSet))
+        navigator.clipboard.writeText(rows.reduce((p, row: any) => {
+            let line = headers.map((val: string, i) => {
+                return row.raw[val]
+            })
+            return `${p}\n${line.join('\t')}`
+        }, headers.map((h) => h.toUpperCase()).join("\t")))
     }
 
     private cacheScans() {
-        return this.apiService.SetCache(this.CACHE_KEY, Array.from(this.state.scans))
+        return this.apiService.SetCache(this.CACHE_KEY_SCAN, Array.from(this.state.scans))
+    }
+
+    private onBarcodeChange(e: any) {
+        const delayInterval = this.state.inputDelayInterval
+        const newScan = e.target.value
+        this.setState({
+            lastBarInputTime: Date.now()
+        }, () => {
+            setTimeout(() => {
+                if (Date.now() - this.state.lastBarInputTime >= delayInterval) {
+                    this.onScan(newScan)
+                    e.target.value = ''
+                }
+            }, delayInterval+50);
+        })
+    }
+
+    private onSetInputDelay(e: any) {
+        const save = () => {
+            this.apiService.SetCache(this.CACHE_KEY_INPUT_DELAY, this.state.inputDelayInterval)
+        }
+
+        if (this.state.inputDelayInterval < this.MIN_DELAY ||
+            this.state.inputDelayInterval > this.MAX_DELAY) {
+                this.setState({
+                    inputDelayInterval: this.DEFAULT_INPUT_DELAY
+                }, save)
+        } else {
+            const val = +e.target.value
+            this.setState({
+                inputDelayInterval: val+1
+            }, () => {this.setState({
+                inputDelayInterval: val
+            }, save)})
+        }
     }
 
     render(): JSX.Element {
@@ -320,6 +411,20 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             // width: '6em',
         }
 
+        const makeScanner = () => {
+            return <BarcodeScannerComponent
+                delay={this.SCAN_DELAY}
+                width={this.state.w}
+                height={this.state.h}
+                facingMode="environment"
+                onUpdate={(err, result) => {
+                    if (result) {
+                        this.onScan(result.getText());
+                    }
+                }}
+            />
+        }
+
         return (
             <Grid container justifyContent='center' style={outerStyle}>
                 <Card style={cardStyle}>
@@ -333,20 +438,46 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                             <Container style={{
                                 // margin: '-3em 0 -3em 0',
                             }}>
-                                <BarcodeScannerComponent
-                                    delay={this.SCAN_DELAY}
-                                    width={this.state.w}
-                                    height={this.state.h}
-                                    facingMode="environment"
-                                    onUpdate={(err, result) => {
-                                        if (result) {
-                                            this.onScan(result.getText())
-                                                .then(() => this.updateInfo());
-                                        }
-                                    }}
-                                />
+                                {this.state.useCamera? makeScanner() : ""}
                             </Container>
-
+                        </Grid>
+                        <Grid item>
+                            <TextField
+                                    label="Enter Barcode Here"
+                                    variant="outlined"
+                                    style={{ width: '15em', margin: '1em' }}
+                                    // onChange={handleChange}
+                                    onChange={(e) => { this.onBarcodeChange(e) }}
+                                    autoFocus
+                                >
+                            </TextField>
+                            <TextField
+                                    label="Delay (ms)"
+                                    type="number"
+                                    variant="outlined"
+                                    style={{ width: '8em', margin: '1em' }}
+                                    // onChange={handleChange}
+                                    onChange={(e) => {this.setState({
+                                        inputDelayInterval: +e.target.value
+                                    })}}
+                                    value={this.state.inputDelayInterval}
+                                    error={this.state.inputDelayInterval < this.MIN_DELAY ||
+                                         this.state.inputDelayInterval > this.MAX_DELAY}
+                                    helperText={this.state.inputDelayInterval < this.MIN_DELAY ||
+                                        this.state.inputDelayInterval > this.MAX_DELAY ? `valid range is ${this.MIN_DELAY} to ${this.MAX_DELAY}`: ""}
+                                    onBlur={(e) => {this.onSetInputDelay(e)}}
+                                >
+                            </TextField>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                style={{ height: '4em', marginTop: '1.1em', marginLeft: '1em'}}
+                                onClick={() => { this.setState({
+                                    useCamera: !this.state.useCamera
+                                })}}
+                            >
+                                Toggle Camera
+                            </Button>
                         </Grid>
                         <Grid item>
                             <Typography
@@ -422,7 +553,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                                 onClick={()=> this.onAct()}
                             >
                                 {/* {this.state.actionButtonName} */}
-                                Recieve & Add
+                                Confirm Recieve
                                 <Fade in={this.state.redirecting} style={{position: 'absolute'}}>
                                     <CircularProgress size={33}/>
                                 </Fade>

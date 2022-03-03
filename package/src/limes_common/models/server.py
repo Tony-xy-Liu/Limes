@@ -4,6 +4,7 @@ from limes_common.models import Model, Primitive, elab, provider as Models
 from limes_common.models import provider
 from limes_common.models.provider import Transaction
 from limes_common.models.elab import MmapAddSample
+from limes_common.models.mmap import SequencingFacilityQuery
 from limes_common.models.http import GET, POST
 
 class Endpoints(provider.Endpoints):
@@ -147,7 +148,7 @@ class MmapAdd(Transaction):
             super().__init__(Endpoints.MMAP_ADD, POST)
 
     class Response(ServerResponse):
-        responses: dict[str, MmapAddSample.Response]
+        responses: dict[str, SequencingFacilityQuery.Response]
 
 
 class Cache(Transaction):

@@ -134,20 +134,6 @@ export abstract class ApiService {
         })
     }
 
-    // public LinkBarcode(AltBarcode: string, SampleBarcode: string) {
-    //     const b = this.makeBody({
-    //         AltBarcode: AltBarcode,
-    //         SampleBarcode: SampleBarcode,
-    //     })
-    //     return this.requester.POST({
-    //         path: 'setaltid',
-    //         body: b
-    //     }).then(raw => {
-    //         const res = raw.data;
-    //         return res;
-    //     })
-    // }
-
     public AddMmapSample(Barcodes: string[]) {
         const b = this.makeBody({
             Barcodes: Barcodes,
@@ -168,13 +154,11 @@ export abstract class ApiService {
             data: JSON.stringify(data),
             isSet: true
         })
-        console.log(b.data)
         return this.requester.POST({
             path: 'cache',
             body: b
         }).then(raw => {
             const res = raw.data;
-            console.log(raw.data)
             return res;
         })
     }
@@ -188,12 +172,13 @@ export abstract class ApiService {
             path: 'cache',
             body: b
         }).then(raw => {
-            // console.log(raw.data.data)
-            let res = JSON.parse(raw.data.data)
+            let res
             try {
-                ;
+                res = JSON.parse(raw.data.data)
             } catch (err) {
-                res = {}
+                res = raw.data.data
+                console.log(`GetCache JSON failed | key:${key}`)
+                console.log(res)
             } finally {
                 return res;
             }
