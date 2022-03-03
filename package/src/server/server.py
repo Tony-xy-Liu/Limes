@@ -8,11 +8,10 @@ from flask_socketio import SocketIO
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from threading import Condition
-from datetime import datetime
 
 from limes_common import config
 from limes_common.models import Model, server, elab
-from limes_common.utils import format_from_utc, current_time
+from limes_common.utils import format_from_utc, current_time, get_time
 from server.authenticator import ClientManger
 from .providers import Handler as ProviderHandler
 from .clientManager import Client, ClientManager
@@ -40,13 +39,12 @@ _views: dict[str, Callable] = {}
 def _toRes(model: Model):
     return model.ToDict()
 
-
 _providers = ProviderHandler(_views, ClientManager.GetInstance())
 _clients = ClientManger(_providers.GetElabCon())
 
 # todo: csrf + maybe encryption 
 def Init():
-    print('init session')
+    _log('init session')
     return _toRes(server.Init.Response('dummy token'))
 
 def Authenticate():
@@ -54,14 +52,14 @@ def Authenticate():
     req = MODEL.Request.Parse(request.data)
     res = _clients.Authenticate(req.ClientID)
     if res.Success:
-        print('auth: %s' % (res.FirstName))
+        _log('auth: %s' % (res.FirstName))
     return _toRes(res)
 
 def Login():
     res = _clients.Login(request.data)
     if res.Success:
-        now = datetime.now().strftime("%d %b, %Y %H:%M:%S")
-        print(f'{now} - {res.LastName}, {res.FirstName} | login')
+        now = get_time()
+        _log(f'{now} - {res.LastName}, {res.FirstName} | login')
     return _toRes(res)
 
 def Barcodes():
@@ -90,7 +88,7 @@ def SetAltID():
 
     res = MODEL.Response()
     if auth.Success:
-        print(f'altid [{req.AltBarcode}]')
+        _log(f'altid [{req.AltBarcode}]')
         mmap = _providers.GetMmapCon()
         mmapRes = mmap.SequencingFacilityQuery(req.AltBarcode, "Pending")
         res.mcode = mmapRes.Code
@@ -112,8 +110,8 @@ def MmapAdd():
 
     res = MODEL.Response()
     if auth.Success:
-        now = datetime.now().strftime("%d %b, %Y %H:%M:%S")
-        print(f'{now} - {auth.LastName}, {auth.FirstName} | mmap receive: [{", ".join(req.Barcodes)}]')
+        now = get_time()
+        _log(f'{now} - {auth.LastName}, {auth.FirstName} | mmap receive: [{", ".join(req.Barcodes)}]')
         mmap = _providers.GetMmapCon()
         mrs = dict([(bar, mmap.SequencingFacilityQuery(bar, "Received")) for bar in req.Barcodes])
         
@@ -123,7 +121,6 @@ def MmapAdd():
         # elab.SetAuth(auth.Token)
         res.responses = mrs
     else:
-        print('x')
         res.Code = 401
         res.Error = 'Authentication failed'
 
@@ -238,7 +235,6 @@ def PrintOps():
                 res.Data = {'Message': m}
     else:
         res.Code = 400
-        print('x')
  
     return _toRes(res)
 
@@ -249,13 +245,13 @@ def add_Api_Views():
         if not n.startswith('_') and n[0].title() == n[0]:
             views[n.lower()] = view
 
-    print('## loading api endpoints')
+    _log('## loading api endpoints')
     linked = 0
     paths = server.Endpoints.Paths()
     for name in paths:
         view = views.get(name, None)
         if view is None:
-            print('unlinked endpoint [%s]'%name)
+            _log('unlinked endpoint [%s]'%name)
             continue
         else:
             del views[name]
@@ -269,11 +265,11 @@ def add_Api_Views():
         linked += 1
         # print('%s: %s' % (ep, m))
     for n in views.keys():
-        print('unlinked view [%s]'%n)
+        _log('unlinked view [%s]'%n)
 
-    print('%s endpoints linked' % linked)
+    _log('%s endpoints linked' % linked)
     if linked != len(paths):
-        print('views: [%s]' % views)
+        _log('views: [%s]' % views)
 add_Api_Views()
 
 # website
@@ -293,13 +289,13 @@ _ccount = 0
 def clientConnected(auth=None):
     global _ccount
     _ccount += 1
-    print('sio client connect, auth [%s], total: %s' % (auth, _ccount))
+    _log('sio client connect, auth [%s], total: %s' % (auth, _ccount))
 
 @sio.on('disconnect')
 def clientDiconnect(auth=None):
     global _ccount
     _ccount -= 1
-    print('sio client disconnect, auth [%s], total: %s' % (auth, _ccount))
+    _log('sio client disconnect, auth [%s], total: %s' % (auth, _ccount))
 
 @sio.on('printReport')
 def PrintReport(data):

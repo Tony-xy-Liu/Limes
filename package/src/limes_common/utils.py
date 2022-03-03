@@ -12,3 +12,6 @@ def current_time() -> float:
 
 def format_from_utc(ts) -> str:
     return datetime.datetime.fromtimestamp(ts, tz=config.TIME_ZONE).strftime("%Y-%b-%d %I:%M:%S %p")
+
+def get_time():
+    return format_from_utc(datetime.datetime.now())
