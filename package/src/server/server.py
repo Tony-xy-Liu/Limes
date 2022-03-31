@@ -239,6 +239,7 @@ def PrintOps():
     return _toRes(res)
 
 def add_Api_Views():
+    _log(f'{format_from_utc(current_time())} | server start')
     current_module = sys.modules[__name__]
     views = _views
     for n, view in inspect.getmembers(current_module, inspect.isfunction):

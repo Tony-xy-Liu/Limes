@@ -19,5 +19,8 @@ class SequencingFacilityQuery(Transaction):
         collectionDate: str
         samplePreservationMethodology: str
         sampleType: str
+        sampleName: str
+        clientName: str
+        siteName: str
         depth: float
         shippingCondition: str

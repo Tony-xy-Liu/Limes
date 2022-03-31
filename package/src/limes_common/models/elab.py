@@ -76,6 +76,7 @@ class Sample(Model):
     link: str
     altID: str
 
+
     @classmethod
     def Parse(cls, raw: Union[bytes, str, dict], base: Model=None):
         s = super().Parse(raw, base=base)

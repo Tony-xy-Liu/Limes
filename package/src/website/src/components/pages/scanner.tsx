@@ -315,30 +315,24 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             return this.state.selectedScanIDs.includes(scanInfo.id)
         })
         if (rows.length === 0) return
-        let headers = [
-            "barcode", "name", "sampleType", "collectionDate", "shippingCondition", "samplePreservationMethodology", "depth", "link"
-        ]
-        let notSeen = headers.reduce((s, h) => s.add(h), new Set<string>())
-        const headersKnownSet = headers.reduce((p, h) => p.add(h), new Set<string>())
+        let notSeen = new Set<string>()
         const headersSet = new Set<string>()
         const newRows: any[] = []
         for (let i=0; i<rows.length; i++) {
             let row: any = rows[i];
             let originalBarcode = row.barcode
             row = row.raw
-            let filterFn;
             let newRow: any = {}
             if (!!row.barcode) {
-                filterFn = (k: any) => ['barcode', 'name', 'sampleType', 'link'].includes(k)
                 newRow.sampleType = row.sampleType.name
                 newRow.barcode = row.altID? row.altID : row.barcode
             } else {
                 newRow.barcode = originalBarcode
-                filterFn = (k: any) => !(['Code', 'Type', 'ElapsedTime', 'Error'].includes(k))
             }
             
+            let filterFn = (k: any) => !(['code', 'type', 'elapsedtime', 'error'].includes(k.toLowerCase()));
             for (let k of Object.keys(row).filter(filterFn)) {
-                if (!headersKnownSet.has(k)) headersSet.add(k)
+                headersSet.add(k)
                 newRow[k] = newRow[k]? newRow[k] : row[k] 
             }
             for (let k of Object.keys(newRow)) {
@@ -347,13 +341,13 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             newRows[i] = newRow
         }
 
-        headers = headers.filter((h) => !notSeen.has(h)).concat(Array.from(headersSet))
+        const headers = Array.from(headersSet)
         const table = newRows.reverse().reduce((p, row: any) => {
             let line = headers.map((val: string, i) => {
                 return row[val]
             })
             return `${p}\n${line.join('\t')}`
-        }, headers.map((h) => h.toUpperCase()).join("\t"))
+        }, headers.join("\t"))
         navigator.clipboard.writeText(table)
     }
 

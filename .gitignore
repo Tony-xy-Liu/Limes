@@ -13,6 +13,7 @@ __pycache__
 
 # logs
 package/src/log.txt
+log*
 
 # dependencies
 node_modules
@@ -33,5 +34,4 @@ package/pyproject.toml
 *.fastq
 elab_cache.npy
 db/
-dbScratch/
-scratch/
+**scratch**
