@@ -229,8 +229,13 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
         .map((i) => scans.get(Number(i)))
         .reduce((p: boolean, c) => p || c?.type === ScanType.UNK, false)
 
+        // this.setState({
+        //     actionDisabled: !canAct
+        // })
+
+        // bypass check, just let hit confirm all the time
         this.setState({
-            actionDisabled: !canAct
+            actionDisabled: true
         })
     }
 
