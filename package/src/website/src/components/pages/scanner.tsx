@@ -25,7 +25,6 @@ interface ScanInfo {
 interface ScannerState {
     scans: Map<number, ScanInfo>
     selectedScanIDs: GridSelectionModel
-    lastID: number
     cardBorderColour: any
     lastScanTime: number
     lastBarInputTime: number,
@@ -53,6 +52,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
     private readonly DEFAULT_INPUT_DELAY = 450
     private readonly MIN_DELAY = 1
     private readonly MAX_DELAY = 10000
+    private lastID: number = -1
 
     constructor(props: ScannerProps) {
         super(props)
@@ -60,7 +60,6 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
         this.state = {
             scans: new Map(),
             selectedScanIDs: [],
-            lastID: -1,
             cardBorderColour: 'transparent',
             lastScanTime: 0,
             lastBarInputTime: 0,
@@ -103,18 +102,38 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                 // ???
             }
 
+            this.lastID = i-1
             this.setState({
                 scans: cachedScans,
-                lastID: i,
                 inputDelayInterval: input_delay? input_delay : this.DEFAULT_INPUT_DELAY,
             })
 
         })
     }
 
-    private onScan(code: string) {
-        if (code.trim() === "") return
+    private onScan(codeStr: string) {
+        if (codeStr.trim() === "") return
 
+        const codes = codeStr.split(" ")
+        let addScanResponse = Promise.resolve()
+
+        while (codes.length > 0) {
+            const code = codes.pop()
+            addScanResponse = addScanResponse.then(() => {
+                if (code !== undefined)
+                    return this.onScanOne(code)
+            })
+        }
+
+        return addScanResponse
+    }
+
+    private getNewScanID() {
+        this.lastID += 1
+        return this.lastID
+    }
+
+    private onScanOne(code: string) {
         const newscans = this.state.scans
         return new Promise<void>((resolve, reject) => {
             this.setState({
@@ -144,7 +163,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
                 // .then(() => setcol('transparent', 500))
 
         }).then(() => {
-            const ID = this.state.lastID+1
+            const ID = this.getNewScanID()
 
             const searchCache = (): Promise<ScanInfo|undefined> => {
                 let foundScan: ScanInfo | null = null
@@ -205,7 +224,6 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
             this.setState({
                 scans: newscans,
                 working: false,
-                lastID: Math.max(newinfo.id, this.state.lastID),
             })
         }).then(() => {
             return this.cacheScans()
@@ -235,7 +253,7 @@ export class ScannerComponent extends React.Component<ScannerProps, ScannerState
 
         // bypass check, just let hit confirm all the time
         this.setState({
-            actionDisabled: true
+            actionDisabled: selected.length === 0
         })
     }
 
