@@ -1,0 +1,260 @@
+[2022-02-09 01:00:10 +0000] [53796] [INFO] Starting gunicorn 20.1.0
+[2022-02-09 01:00:10 +0000] [53796] [INFO] Listening at: https://192.168.120.68:8001 (53796)
+[2022-02-09 01:00:10 +0000] [53796] [INFO] Using worker: geventwebsocket.gunicorn.workers.GeventWebSocketWorker
+[2022-02-09 01:00:10 +0000] [53800] [INFO] Booting worker with pid: 53800
+[2022-02-09 01:00:50 +0000] [53796] [INFO] Handling signal: hup
+[2022-02-09 01:00:50 +0000] [53796] [INFO] Hang up: Master
+[2022-02-09 01:00:50 +0000] [53796] [WARNING] Worker with pid 53800 was terminated due to signal 1
+[2022-02-09 01:00:50 +0000] [54021] [INFO] Booting worker with pid: 54021
+[2022-02-11 22:52:45,761] ERROR in app: Exception on /api/d1/mmapadd [POST]
+Traceback (most recent call last):
+  File "/home/tliu/anaconda3/envs/limes/lib/python3.9/site-packages/flask/app.py", line 2073, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/tliu/anaconda3/envs/limes/lib/python3.9/site-packages/flask/app.py", line 1518, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/tliu/anaconda3/envs/limes/lib/python3.9/site-packages/flask/app.py", line 1516, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/tliu/anaconda3/envs/limes/lib/python3.9/site-packages/flask/app.py", line 1502, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "/home/tliu/workspace/Limes/package/src/server/server.py", line 118, in MmapAdd
+    res = elab.AddSample(req.Barcode, mr)
+  File "/home/tliu/workspace/Limes/package/src/limes_common/connections/statics/eLab.py", line 145, in AddSample
+    sampleID = res.Body['raw']
+KeyError: 'raw'
+[2022-02-11 23:00:01 +0000] [53796] [INFO] Handling signal: term
+[2022-02-11 23:00:04 +0000] [54021] [WARNING] Worker graceful timeout (pid:54021)
+[2022-02-11 23:00:05 +0000] [54021] [INFO] Worker exiting (pid: 54021)
+## loading static providers
+loaded 2
+## loading api endpoints
+14 endpoints linked
+sio client connect, auth [None], total: 1
+login: Tony
+sio client disconnect, auth [None], total: 0
+sio client connect, auth [None], total: 1
+sio client disconnect, auth [None], total: 0
+sio client connect, auth [None], total: 1
+login: Resmi
+login: Resmi
+login: Resmi
+sio client disconnect, auth [None], total: 0
+login: Resmi
+login: Resmi
+login: Resmi
+sio client connect, auth [None], total: 1
+login: Resmi
+login: Resmi
+sio client disconnect, auth [None], total: 0
+login: Tony
+mmap add: ZW3C8-B5R6B-TWCCD
+login: Leslie-Anne
+login: Tony
+login: Aleksandra
+login: Aleksandra
+login: Tony
+login: Aleksandra
+login: Aleksandra
+login: Tony
+reloading cache
+complete
+reloading cache
+complete
+reloading cache
+complete
+login: Tony
+login: Leslie-Anne
+mmap add: ZW3C8-B5R6B-TWCCD
+[2022-02-11 23:00:05 +0000] [53796] [INFO] Shutting down: Master
+[2022-02-11 23:07:45 +0000] [69265] [INFO] Starting gunicorn 20.1.0
+[2022-02-11 23:07:45 +0000] [69265] [INFO] Listening at: https://192.168.120.68:8001 (69265)
+[2022-02-11 23:07:45 +0000] [69265] [INFO] Using worker: geventwebsocket.gunicorn.workers.GeventWebSocketWorker
+[2022-02-11 23:07:45 +0000] [69272] [INFO] Booting worker with pid: 69272
+[2022-02-12 03:05:59 +0000] [69265] [INFO] Handling signal: hup
+[2022-02-12 03:05:59 +0000] [69265] [INFO] Hang up: Master
+[2022-02-12 03:05:59 +0000] [69265] [WARNING] Worker with pid 69272 was terminated due to signal 1
+[2022-02-12 03:05:59 +0000] [111488] [INFO] Booting worker with pid: 111488
+[2022-02-18 21:00:32 +0000] [69265] [INFO] Handling signal: term
+[2022-02-18 21:01:02 +0000] [69265] [INFO] Shutting down: Master
+[2022-02-18 21:05:08 +0000] [139351] [INFO] Starting gunicorn 20.1.0
+[2022-02-18 21:05:08 +0000] [139351] [INFO] Listening at: https://192.168.120.68:8001 (139351)
+[2022-02-18 21:05:08 +0000] [139351] [INFO] Using worker: geventwebsocket.gunicorn.workers.GeventWebSocketWorker
+[2022-02-18 21:05:08 +0000] [139352] [INFO] Booting worker with pid: 139352
+[2022-02-18 21:10:27 +0000] [139351] [INFO] Handling signal: term
+[2022-02-18 21:10:48 +0000] [140563] [INFO] Starting gunicorn 20.1.0
+[2022-02-18 21:10:48 +0000] [140563] [INFO] Listening at: https://192.168.120.68:8001 (140563)
+[2022-02-18 21:10:48 +0000] [140563] [INFO] Using worker: geventwebsocket.gunicorn.workers.GeventWebSocketWorker
+[2022-02-18 21:10:48 +0000] [140564] [INFO] Booting worker with pid: 140564
+[2022-02-18 21:10:57 +0000] [139351] [INFO] Shutting down: Master
+[2022-02-18 21:13:07,059] ERROR in app: Exception on /api/d1/mmapadd [POST]
+Traceback (most recent call last):
+  File "/home/tliu/anaconda3/envs/limes/lib/python3.9/site-packages/flask/app.py", line 2073, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/tliu/anaconda3/envs/limes/lib/python3.9/site-packages/flask/app.py", line 1518, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/tliu/anaconda3/envs/limes/lib/python3.9/site-packages/flask/app.py", line 1516, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/tliu/anaconda3/envs/limes/lib/python3.9/site-packages/flask/app.py", line 1502, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**req.view_args)
+  File "/home/tliu/workspace/Limes/package/src/server/server.py", line 118, in MmapAdd
+    res = elab.AddSample(req.Barcode, mr)
+  File "/home/tliu/workspace/Limes/package/src/limes_common/connections/statics/eLab.py", line 153, in AddSample
+    {'sampleDataType': 'TEXT', 'key': 'Shipping Condition', 'value': cond, 'sampleTypeMetaID': 215093},
+NameError: name 'cond' is not defined
+[2022-02-18 21:14:24 +0000] [140563] [INFO] Handling signal: term
+[2022-02-18 21:14:54 +0000] [140563] [INFO] Shutting down: Master
+[2022-02-18 21:18:27 +0000] [142723] [INFO] Starting gunicorn 20.1.0
+[2022-02-18 21:18:27 +0000] [142723] [INFO] Listening at: https://192.168.120.68:8001 (142723)
+[2022-02-18 21:18:27 +0000] [142723] [INFO] Using worker: geventwebsocket.gunicorn.workers.GeventWebSocketWorker
+[2022-02-18 21:18:27 +0000] [142727] [INFO] Booting worker with pid: 142727
+[2022-02-18 22:23:40 +0000] [142723] [INFO] Handling signal: hup
+[2022-02-18 22:23:40 +0000] [142723] [INFO] Hang up: Master
+[2022-02-18 22:23:40 +0000] [142723] [WARNING] Worker with pid 142727 was terminated due to signal 1
+[2022-02-18 22:23:40 +0000] [153667] [INFO] Booting worker with pid: 153667
+[2022-02-24 04:58:00 +0000] [153667] [WARNING] Worker graceful timeout (pid:153667)
+[2022-02-24 04:58:01 +0000] [153667] [INFO] Worker exiting (pid: 153667)
+## loading static providers
+loaded 2
+## loading api endpoints
+14 endpoints linked
+sio client connect, auth [None], total: 1
+sio client connect, auth [None], total: 2
+sio client disconnect, auth [None], total: 1
+login: Leslie-Anne
+login: Leslie-Anne
+login: Leslie-Anne
+mmap add: C85LG-GELYG-1G8C5
+login: Leslie-Anne
+mmap add: V84Y7-6RTWN-2R7FJ
+login: Leslie-Anne
+login: Leslie-Anne
+login: Leslie-Anne
+mmap add: 88JFK-NG9J2-VJEH9
+login: Leslie-Anne
+login: Tony
+login: Leslie-Anne
+mmap add: 88JFK-NG9J2-VJEH9
+mmap add: 11W43-G12TE-0N495
+mmap add: PCGYJ-CP317-XVK9N
+mmap add: MRL57-5TVMH-76J56
+mmap add: Y886R-Y6229-GJF5M
+mmap add: WFPPT-964H6-T2FV5
+mmap add: 9LM7W-GXR6E-VEVX1
+mmap add: Y4MH8-K49GJ-9T149
+mmap add: J5M8N-28R6C-9RFXG
+mmap add: V6VFC-RF7M4-W761E
+mmap add: XMY1K-CJPWJ-RCV00
+mmap add: PM84V-RHY29-35CF3
+mmap add: J7RRC-KTJEC-2XLC0
+mmap add: WL9PK-CWGVK-KJCFY
+mmap add: 4FF23-NCL4V-LE078
+mmap add: 3Y406-7YJ5Y-CMVKG
+mmap add: 6FPFV-HR51H-X60JN
+mmap add: C3FNL-0YXC7-KWRV3
+mmap add: 2YCM2-TXMGW-0LJHN
+mmap add: HX4F1-M9X42-R77P1
+mmap add: L4CPW-HN67N-1165G
+mmap add: WLN28-NNF40-GXR05
+mmap add: LX44V-69MW3-1853L
+mmap add: YH80R-EYK10-G4PKY
+mmap add: 4KEHM-42VGJ-H62YR
+mmap add: 3YYGH-KYV8N-0948R
+mmap add: T0MCV-10H0J-YC1CP
+mmap add: XNPJX-0PFPX-1978X
+mmap add: 6VG5P-K1KEL-FE5Y0
+mmap add: 2R3GF-CCGEL-XGFWP
+mmap add: T9RGE-CEFEL-JH37F
+mmap add: FG4WY-CY1P3-3638P
+mmap add: VFE7Y-2E37V-R6GEW
+mmap add: 5L3WT-33JNG-5T145
+mmap add: EFV4V-47H1Y-FWLHG
+mmap add: CJ121-W72HP-1RK5K
+mmap add: KEECR-NR54T-4F5H8
+mmap add: 9ERK3-7EF9F-RJ28N
+mmap add: C03K2-93RR0-XXHT5
+mmap add: 8F04W-K4N3J-WEPKL
+mmap add: CMVRM-7P7V3-0RXK8
+mmap add: 030NT-75EPK-YFCRJ
+mmap add: 3F5YN-63FLE-LX7F7
+mmap add: 7Y67N-9T0MT-Y80W4
+mmap add: W5TRM-VPE55-3T5Y2
+mmap add: TWK8K-E9VN8-6HXVH
+mmap add: FGCEN-Y3EXE-HW8NE
+mmap add: 47HE9-G1KKN-1WWWN
+mmap add: 030NT-75EPK-YFCRJ
+mmap add: 3F5YN-63FLE-LX7F7
+mmap add: W5TRM-VPE55-3T5Y2
+mmap add: W5TRM-VPE55-3T5Y2
+mmap add: W5TRM-VPE55-3T5Y2
+mmap add: W5TRM-VPE55-3T5Y2
+mmap add: 3F5YN-63FLE-LX7F7
+mmap add: 3F5YN-63FLE-LX7F7
+mmap add: W5TRM-VPE55-3T5Y2
+mmap add: W5TRM-VPE55-3T5Y2
+mmap add: W5TRM-VPE55-3T5Y2
+mmap add: W5TRM-VPE55-3T5Y2
+mmap add: W5TRM-VPE55-3T5Y2
+sio client disconnect, auth [None], total: 0
+sio client connect, auth [None], total: 1
+sio client connect, auth [None], total: 2
+sio client disconnect, auth [None], total: 1
+sio client connect, auth [None], total: 2
+sio client disconnect, auth [None], total: 1
+sio client disconnect, auth [None], total: 0
+sio client connect, auth [None], total: 1
+sio client disconnect, auth [None], total: 0
+sio client connect, auth [None], total: 1
+sio client disconnect, auth [None], total: 0
+sio client connect, auth [None], total: 1
+sio client connect, auth [None], total: 2
+sio client disconnect, auth [None], total: 1
+sio client disconnect, auth [None], total: 0
+sio client connect, auth [None], total: 1
+sio client disconnect, auth [None], total: 0
+sio client connect, auth [None], total: 1
+sio client disconnect, auth [None], total: 0
+sio client connect, auth [None], total: 1
+sio client disconnect, auth [None], total: 0
+sio client connect, auth [None], total: 1
+sio client connect, auth [None], total: 2
+sio client disconnect, auth [None], total: 1
+sio client connect, auth [None], total: 2
+sio client disconnect, auth [None], total: 1
+sio client disconnect, auth [None], total: 0
+sio client connect, auth [None], total: 1
+sio client connect, auth [None], total: 2
+sio client disconnect, auth [None], total: 1
+sio client connect, auth [None], total: 2
+sio client disconnect, auth [None], total: 1
+sio client connect, auth [None], total: 2
+sio client disconnect, auth [None], total: 1
+sio client disconnect, auth [None], total: 0
+sio client connect, auth [None], total: 1
+sio client connect, auth [None], total: 2
+sio client disconnect, auth [None], total: 1
+login: Aleksandra
+login: Aleksandra
+login: Aleksandra
+login: Aleksandra
+login: Leslie-Anne
+mmap add: KMP88-530EN-54HVN
+mmap add: 7RPE5-466XH-GE636
+mmap add: CVT56-TK9F5-7MW3X
+mmap add: 74L56-7HC6C-C9Y6W
+mmap add: 8HVNC-HYE96-84JGG
+mmap add: 97L17-52KC6-KP5M5
+mmap add: WKFRN-3TWG8-30YMP
+mmap add: R33GG-5TG3K-1NVM7
+mmap add: 9JP4R-K33G8-PNMVY
+mmap add: 8J2WT-88CPN-CEYXM
+mmap add: 8J2WT-88CPN-CEYXM
+login: Leslie-Anne
+mmap add: 74L56-7HC6C-C9Y6W
+mmap add: 8HVNC-HYE96-84JGG
+mmap add: 97L17-52KC6-KP5M5
+mmap add: WKFRN-3TWG8-30YMP
+mmap add: R33GG-5TG3K-1NVM7
+mmap add: 9JP4R-K33G8-PNMVY
+mmap add: 9JP4R-K33G8-PNMVY
+[2022-02-24 04:58:01 +0000] [206052] [INFO] Booting worker with pid: 206052
+[2022-02-24 04:58:29 +0000] [142723] [INFO] Handling signal: term
+[2022-02-24 04:58:59 +0000] [142723] [INFO] Shutting down: Master
